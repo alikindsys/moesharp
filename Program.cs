@@ -7,6 +7,9 @@ using OpenQA.Selenium;
 using SeleniumExtras.WaitHelpers;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
+using OpenQA.Selenium.Remote;
+using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace moesharp
 {
@@ -52,6 +55,7 @@ namespace moesharp
         {
             if (v.StartsWith("https://twist.moe/"))
             {
+                var cplp = new ChromePerformanceLoggingPreferences();
                 var opt = new ChromeOptions();
                 opt.AddArgument("--headless");
                 using (var driver = new ChromeDriver(Directory.GetCurrentDirectory(), options: opt, commandTimeout: TimeSpan.FromMinutes(10)))
@@ -63,6 +67,7 @@ namespace moesharp
                     var episodeCount = driver.FindElementsByClassName("episode-number").ToList().Count();
                     var video = driver.FindElementByTagName("video");
                     var src = video.GetAttribute("src");
+                    // Console.WriteLine($"Logs Found : {logs.Count}");
                     Regex animeName = new Regex(@"(.\(.+)|(.Episode.+)");
                     string SeriesName = animeName.Replace(title, "").ToString();
                     Console.WriteLine($"Found Anime : {SeriesName}");
@@ -102,9 +107,43 @@ namespace moesharp
                             }
                             using (WebClient wc = new WebClient())
                             {
-                                wc.DownloadFile(EpLink, $"{Directory.GetCurrentDirectory()}/{SeriesName}/EP{i}.mp4");
+                                var request = GetRequest(v);
+                                HttpWebRequest get = (HttpWebRequest)HttpWebRequest.Create(EpLink);
+                                get.CookieContainer = new CookieContainer();
+                                get.CookieContainer.Add(new System.Net.Cookie
+                                {
+                                    Name = request.Response.Cookies[0].Name,
+                                    Value = request.Response.Cookies[0].Value,
+                                    Comment = request.Response.Cookies[0].Comment,
+                                    Domain = request.Response.Cookies[0].Domain
+                                });
+                                get.Headers = new WebHeaderCollection();
+                                foreach (var header in request.Request.Headers)
+                                {
+                                    get.Headers.Add(header.Name, header.Value);
+                                }
+                                get.Method = WebRequestMethods.Http.Get;
+                                ServicePointManager
+                                .ServerCertificateValidationCallback +=
+                                (sender, cert, chain, sslPolicyErrors) => true;
+                                HttpWebResponse response = (HttpWebResponse)get.GetResponse();
+                                Stream httpResponseStream = response.GetResponseStream();
+                                int bufferSize = 1024;
+                                byte[] buffer = new byte[bufferSize];
+                                int bytesRead = 0;
+                                FileStream fileStream = File.Create($"{Directory.GetCurrentDirectory()}/{SeriesName}/EP{i}.mp4");
+                                while ((bytesRead = httpResponseStream.Read(buffer, 0, bufferSize)) != 0)
+                                {
+                                    fileStream.Write(buffer, 0, bytesRead);
+                                }
+                                Console.WriteLine($"Done downloading EP {i} from {SeriesName}");
                             }
                         }
+                        foreach (var process in Process.GetProcessesByName("java"))
+                        {
+                            process.Kill();
+                        }
+                        Console.WriteLine("[pKill] Killed java instances (used on the cookie grabbing)");
                     }
 
                 }
@@ -116,5 +155,33 @@ namespace moesharp
 
         }
 
+        private static Entry GetRequest(string redirect)
+        {
+            CallPy(redirect);
+            Har r = JsonConvert.DeserializeObject<Har>(File.ReadAllText($"{Directory.GetCurrentDirectory()}/har.json"));
+            var cookie = r.Log.Entries.Find(x => x.Response.Cookies.Any(y => y.Name == "__cfduid"));
+            return cookie;
+        }
+
+        private static void CallPy(string redirect)
+        {
+            Console.WriteLine("[Calling Python Script in order to get a valid cookie]");
+            CmdPy("grab.py", redirect);
+
+            Console.WriteLine("[Cookie grabbed.]");
+
+        }
+        public static void CmdPy(string cmd, string args)
+        {
+            ProcessStartInfo start = new ProcessStartInfo();
+            start.FileName = "python";
+            start.Arguments = string.Format("\"{0}\" \"{1}\"", cmd, args);
+            start.UseShellExecute = false;// Do not use OS shell
+            start.CreateNoWindow = false; // We don't need new window
+            start.RedirectStandardOutput = true;// Any output, generated by application will be redirected back
+            start.RedirectStandardError = true; // Any error in standard output will be redirected back (for example exceptions)
+            var p = Process.Start(start);
+            p.WaitForExit();
+        }
     }
 }

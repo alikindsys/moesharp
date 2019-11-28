@@ -4,8 +4,9 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Selenium.WebDriver" Version="3.141.0"/>
-    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="78.0.3904.1100-beta"/>
-    <PackageReference Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0"/>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
+    <PackageReference Include="Selenium.WebDriver.ChromeDriver" Version="78.0.3904.1100-beta" />
+    <PackageReference Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
   </ItemGroup>
 </Project>
