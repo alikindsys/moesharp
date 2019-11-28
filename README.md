@@ -18,3 +18,7 @@ use `pip install <package name>` on your terminal (cmd for windows) after instal
 *Notice : The program will create a new folder for each anime and rename them as EP1, EP2...*
 
 *It will look halted once it starts downloading a file and thats normal. The filesize will increase over time untill completion*
+
+## Roadmap
+- [ ] Support for partial downloads (continue downloading later)
+- [ ] Support for skipping already existing files
