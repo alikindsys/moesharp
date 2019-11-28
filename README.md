@@ -1,5 +1,5 @@
 # moesharp
-Simple downloaded that i've made for twist.moe. Will be integrated as an Aniki module.
+Simple downloader that i've made for twist.moe. Will be integrated as an Aniki module.
 
 ### [Click here to go to the download page](https://github.com/RORIdev/moesharp/releases)
 ## Requirements for using moesharp
