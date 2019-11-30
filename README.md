@@ -3,6 +3,7 @@ Simple downloader that i've made for twist.moe. Will be integrated as an Aniki m
 
 ### [Click here to go to the download page](https://github.com/RORIdev/moesharp/releases)
 ## Requirements for using moesharp
+**As it uses chromedriver, it requires chrome/chromium.**
 |      languages    | python 3         | java |
 |----------|------------------|------|
 | packages | selenium         |      |
