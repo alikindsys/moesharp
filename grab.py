@@ -15,7 +15,12 @@ else:
             proc.kill()
 
     dict = {'port': 8090}
-    server = Server(path="./bmp/bin/browsermob-proxy", options=dict)
+    print("Server is set to OS : {0}".format(os.name))
+    if (os.name == 'nt'):
+        server = Server(path=".\\bmp\\bin\\browsermob-proxy.bat", options=dict)     
+    else :
+        server = Server(path="./bmp/bin/browsermob-proxy", options=dict)
+        print("Server path is : {0}".format(server.path))
     server.start()
     time.sleep(1)
     proxy = server.create_proxy()
@@ -24,7 +29,7 @@ else:
     selenium_proxy = proxy.selenium_proxy()
     path = "./chromedriver"
     if (os.name == 'nt' ):
-        path = "".join([path,".exe"])
+        path = ".\\chromedriver.exe"
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--proxy-server={0}".format(proxy.proxy))
     driver = webdriver.Chrome(
