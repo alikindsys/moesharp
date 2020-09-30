@@ -42,6 +42,9 @@
 # *.iml
 # *.ipr
 
+*.exe
+*.json
+
 # CMake
 cmake-build-*/
 
