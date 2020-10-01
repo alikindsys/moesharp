@@ -1,32 +1,45 @@
 import com.google.gson.Gson
+import io.netty.handler.logging.LogLevel
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeDriverLogLevel
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.firefox.FirefoxDriver
+import org.openqa.selenium.firefox.FirefoxDriverLogLevel
 import org.openqa.selenium.firefox.FirefoxOptions
 import java.io.File
+import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
-data class Config(val browser : String, val path: String) {
-    constructor(browser: String) : this(browser, "")
+data class Config(val browser : String, val driverpath: String, val animepath: String) {
+    constructor(browser: String) : this(browser, "", "")
+    constructor(browser: String, driverpath: String) : this (browser, driverpath, "")
 }
 fun main(args: Array<String>) {
     val driver : WebDriver
     val file = File("./config.json")
     val cfg = createConfig(file)
-    System.setProperty("webdriver.chrome.driver",cfg.path)
-    System.setProperty("webdriver.gecko.driver",cfg.path)
+    if(args.isEmpty()){
+        println("Usage : moetk [link] <link2> ...")
+        println("Please add at least ONE link.")
+        exitProcess(-1)
+    }
+    System.setProperty("webdriver.chrome.driver",cfg.driverpath)
+    System.setProperty("webdriver.gecko.driver",cfg.driverpath)
     driver = when (cfg.browser) {
-        "firefox" -> FirefoxDriver()
-        "chrome" -> ChromeDriver()
+        "firefox" -> FirefoxDriver(FirefoxOptions().setHeadless(true).setLogLevel(FirefoxDriverLogLevel.WARN))
+        "chrome" -> ChromeDriver(ChromeOptions().setHeadless(true).setLogLevel(ChromeDriverLogLevel.WARNING))
         else -> exitProcess(-1)
     }
-    try {
-        driver.get("https://google.com")
-    } finally {
-        driver.quit()
+
+    driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+    val animes = driver.getAllAnimes(args)
+    val episodes = animes.flatMap {driver.getEpisodes(it)}
+    driver.quit()
+    for(episode in episodes) {
+        episode.download(cfg)
     }
-    println("Hello World!")
+    exitProcess(0)
 }
 
 fun createConfig(file: File) : Config {
@@ -65,6 +78,14 @@ fun createConfig(file: File) : Config {
                 exitProcess(-1)
             }
             cfg = Config(cfg.browser, check.canonicalPath)
+        }
+        println("Please input the path of the anime folder")
+        println("\"anime folder\" - where you want anime to be downloaded to.")
+        val input3 = readLine()?.trim()
+        if(input3 != null) {
+            val check = File(input3)
+            check.mkdirs()
+            cfg = Config(cfg.browser, cfg.driverpath, check.canonicalPath)
         }
         file.writeText(Gson().toJson(cfg))
     }
