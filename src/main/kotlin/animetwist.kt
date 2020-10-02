@@ -9,7 +9,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.random.Random
 
-data class MoeAnime(val link: Uri, val length: Int, val name: String) {
+data class MoeAnime(val link: Uri, val episodeNumber: Int, val name: String) {
     constructor(link: String, driver: WebDriver) :
             this(
                 Uri(link.processLink()),
@@ -23,7 +23,7 @@ data class MoeAnimeResource(val anime: MoeAnime, val episode: Int, val url: Stri
 fun WebDriver.getEpisodes(anime: MoeAnime) : List<MoeAnimeResource> {
     val resources: MutableList<MoeAnimeResource> = mutableListOf()
     println("Getting episodes for : [${anime.name}]")
-    for( i in 1..anime.length){
+    for( i in 1..anime.episodeNumber){
         println("Current episode : $i")
         this.get("${anime.link}/$i")
         var elem = this.findElement(By.xpath("/html/body/div[1]/div[2]/div/div[1]/section/div/div/video"))
@@ -90,7 +90,7 @@ fun WebDriver.getAllAnimes(args:Array<String>) : List<MoeAnime> {
 fun MoeAnimeResource.download(config: Config) {
     val file = File("${config.animepath}/${this.anime.name}/${this.episode}.mp4")
     val path = File("${config.animepath}/${this.anime.name}")
-    println("[${this.episode}/${this.anime.length}] Downloading ${this.anime.name} - Episode ${this.episode} to [${file.canonicalPath}]")
+    println("[${this.episode}/${this.anime.episodeNumber}] Downloading ${this.anime.name} - Episode ${this.episode} to [${file.canonicalPath}]")
     path.mkdirs()
     if(!file.exists()) file.createNewFile()
     val url = URL(this.url)
