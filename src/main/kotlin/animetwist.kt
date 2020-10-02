@@ -25,7 +25,7 @@ internal fun WebDriver.getEpisodes(anime: MoeAnime) : List<MoeAnimeEpisode> {
     println("Getting episodes for : [${anime.name}]")
     for( i in 1..anime.episodeCount){
         println("Current episode : $i")
-        this.get("${anime.link}/$i")
+        if(this.currentUrl != "${anime.link}/$i") this.get("${anime.link}/$i")
         var elem = this.findElement(By.xpath("/html/body/div[1]/div[2]/div/div[1]/section/div/div/video"))
         var src = elem.getAttribute("src")
         while(src.isBlank()){
@@ -49,14 +49,14 @@ internal fun WebDriver.getEpisodes(anime: MoeAnime) : List<MoeAnimeEpisode> {
 }
 
 internal fun WebDriver.getAnimeSize(link: String) : Int {
-    this.get(link)
+    if(this.currentUrl != link) this.get(link)
     val e = this.findElement(By.ByXPath("/html/body/div[1]/div[2]/div/div[1]/section/main/div[2]/div[3]"))
     val episodes = e.findElements(By.tagName("li"))
     return episodes.count()
 }
 
 internal fun WebDriver.getAnimeName(link: String) : String {
-    this.get(link)
+    if(this.currentUrl != link) this.get(link)
     val e = this.findElement(By.xpath("/html/body/div[1]/div[2]/div/div[1]/section/main/div[2]/div[1]/h2/span"))
     return e.text.trim()
 }
