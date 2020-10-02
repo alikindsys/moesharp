@@ -9,7 +9,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.random.Random
 
-data class MoeAnime(val link: Uri, val episodeNumber: Int, val name: String) {
+data class MoeAnime(val link: Uri, val episodeCount: Int, val name: String) {
     constructor(link: String, driver: WebDriver) :
             this(
                 Uri(link.processLink()),
@@ -18,12 +18,12 @@ data class MoeAnime(val link: Uri, val episodeNumber: Int, val name: String) {
             )
 }
 
-data class MoeAnimeResource(val anime: MoeAnime, val episode: Int, val url: String)
+data class MoeAnimeEpisode(val anime: MoeAnime, val episode: Int, val url: String)
 
-fun WebDriver.getEpisodes(anime: MoeAnime) : List<MoeAnimeResource> {
-    val resources: MutableList<MoeAnimeResource> = mutableListOf()
+fun WebDriver.getEpisodes(anime: MoeAnime) : List<MoeAnimeEpisode> {
+    val episodes: MutableList<MoeAnimeEpisode> = mutableListOf()
     println("Getting episodes for : [${anime.name}]")
-    for( i in 1..anime.episodeNumber){
+    for( i in 1..anime.episodeCount){
         println("Current episode : $i")
         this.get("${anime.link}/$i")
         var elem = this.findElement(By.xpath("/html/body/div[1]/div[2]/div/div[1]/section/div/div/video"))
@@ -33,8 +33,8 @@ fun WebDriver.getEpisodes(anime: MoeAnime) : List<MoeAnimeResource> {
             src = elem.getAttribute("src")
         }
 
-        resources.add(
-            MoeAnimeResource(
+        episodes.add(
+            MoeAnimeEpisode(
                 anime, i, decodeURL(
                     src.replace(
                         "https://twistcdn.bunny.sh/anime/",
@@ -44,8 +44,8 @@ fun WebDriver.getEpisodes(anime: MoeAnime) : List<MoeAnimeResource> {
             )
         )
     }
-    println("Finished getting episodes for ${anime.name}. Count : ${resources.count()}")
-    return resources.toList()
+    println("Finished getting episodes for ${anime.name}. Count : ${episodes.count()}")
+    return episodes.toList()
 }
 
 fun WebDriver.getAnimeSize(link: String) : Int {
@@ -87,10 +87,10 @@ fun WebDriver.getAllAnimes(args:Array<String>) : List<MoeAnime> {
     return tempAnimes.toList()
 }
 
-fun MoeAnimeResource.download(config: Config) {
+fun MoeAnimeEpisode.download(config: Config) {
     val file = File("${config.animepath}/${this.anime.name}/${this.episode}.mp4")
     val path = File("${config.animepath}/${this.anime.name}")
-    println("[${this.episode}/${this.anime.episodeNumber}] Downloading ${this.anime.name} - Episode ${this.episode} to [${file.canonicalPath}]")
+    println("[${this.episode}/${this.anime.episodeCount}] Downloading ${this.anime.name} - Episode ${this.episode} to [${file.canonicalPath}]")
     path.mkdirs()
     if(!file.exists()) file.createNewFile()
     val url = URL(this.url)
@@ -135,7 +135,7 @@ fun InputStream.writeAllToFile(file : File) {
     fos.closeQuietly()
 }
 
-fun MoeAnimeResource.getLength(url : URL) : Long {
+fun MoeAnimeEpisode.getLength(url : URL) : Long {
     val conn = url.openConnection() as HttpURLConnection
     conn.requestMethod = "HEAD"
     conn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
@@ -144,7 +144,7 @@ fun MoeAnimeResource.getLength(url : URL) : Long {
     return size;
 }
 
-fun MoeAnimeResource.getInputStreamRequest(url : URL, file: File, length : Long) : HttpURLConnection? {
+fun MoeAnimeEpisode.getInputStreamRequest(url : URL, file: File, length : Long) : HttpURLConnection? {
     val conn = url.openConnection() as HttpURLConnection
     conn.requestMethod = "GET"
     conn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
