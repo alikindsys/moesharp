@@ -1,12 +1,10 @@
 import com.sun.jndi.toolkit.url.Uri
 import okhttp3.internal.closeQuietly
 import org.openqa.selenium.By
-import org.openqa.selenium.Cookie
 import org.openqa.selenium.WebDriver
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.random.Random
@@ -95,11 +93,7 @@ fun MoeAnimeResource.download(config: Config) {
     println("[${this.episode}/${this.anime.length}] Downloading ${this.anime.name} - Episode ${this.episode} to [${file.canonicalPath}]")
     path.mkdirs()
     val url = URL(this.url)
-    val checkSizeConn = url.openConnection() as HttpURLConnection
-    checkSizeConn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
-    checkSizeConn.requestMethod = "HEAD"
-    val len = checkSizeConn.contentLengthLong;
-    checkSizeConn.disconnect()
+    val len = this.getLength(url)
     val getFileConn = url.openConnection() as HttpURLConnection
     getFileConn.requestMethod = "GET"
     getFileConn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
@@ -160,4 +154,13 @@ fun InputStream.writeAllToFile(file : File) {
         fos.write(buffer, 0, bytesRead)
     }
     fos.closeQuietly()
+}
+
+fun MoeAnimeResource.getLength(url : URL) : Long {
+    val conn = url.openConnection() as HttpURLConnection
+    conn.requestMethod = "HEAD"
+    conn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
+    val size = conn.contentLengthLong
+    conn.disconnect()
+    return size;
 }
