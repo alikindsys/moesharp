@@ -58,7 +58,7 @@ fun WebDriver.getAnimeSize(link: String) : Int {
 fun WebDriver.getAnimeName(link: String) : String {
     this.get(link)
     val e = this.findElement(By.xpath("/html/body/div[1]/div[2]/div/div[1]/section/main/div[2]/div[1]/h2/span"))
-    return e.text.trim();
+    return e.text.trim()
 }
 fun String.processLink() : String {
     val processedLink : MutableList<String> = mutableListOf()
@@ -141,7 +141,7 @@ fun MoeAnimeEpisode.getLength(url : URL) : Long {
     conn.setRequestProperty("referer", "${this.anime.link}/${this.episodeNumber}")
     val size = conn.contentLengthLong
     conn.disconnect()
-    return size;
+    return size
 }
 
 fun MoeAnimeEpisode.getInputStreamRequest(url : URL, file: File, length : Long) : HttpURLConnection? {
