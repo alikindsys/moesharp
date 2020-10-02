@@ -5,6 +5,8 @@ import org.openqa.selenium.Cookie
 import org.openqa.selenium.WebDriver
 import java.io.File
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.random.Random
@@ -118,13 +120,7 @@ fun MoeAnimeResource.download(config: Config) {
     if(code == 200 || code == 206){
         println("Download started.")
         val stream = getFileConn.inputStream
-        val fos = FileOutputStream(file, true)
-        val buffer = ByteArray(100 * 1024)
-        var bytesRead: Int
-        while (stream.read(buffer).also { bytesRead = it } != -1) {
-            fos.write(buffer, 0, bytesRead)
-        }
-        fos.closeQuietly()
+        stream.writeAllToFile(file)
         stream.closeQuietly()
         println("Download Ended.")
     } else {
@@ -154,4 +150,14 @@ fun decodeURL(str: String) : String {
 fun getKnownCDNServer() : String {
     val rnd = Random.nextInt(1, 60)
     return "https://edge-$rnd.cdn.bunny.sh"
+}
+
+fun InputStream.writeAllToFile(file : File) {
+    val fos = FileOutputStream(file, true)
+    val buffer = ByteArray(100 * 1024)
+    var bytesRead: Int
+    while (this.read(buffer).also { bytesRead = it } != -1) {
+        fos.write(buffer, 0, bytesRead)
+    }
+    fos.closeQuietly()
 }
