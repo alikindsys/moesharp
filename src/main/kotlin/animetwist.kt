@@ -18,7 +18,7 @@ data class MoeAnime(val link: Uri, val episodeCount: Int, val name: String) {
             )
 }
 
-data class MoeAnimeEpisode(val anime: MoeAnime, val episode: Int, val url: String)
+data class MoeAnimeEpisode(val anime: MoeAnime, val episodeNumber: Int, val url: String)
 
 fun WebDriver.getEpisodes(anime: MoeAnime) : List<MoeAnimeEpisode> {
     val episodes: MutableList<MoeAnimeEpisode> = mutableListOf()
@@ -88,20 +88,20 @@ fun WebDriver.getAllAnimes(args:Array<String>) : List<MoeAnime> {
 }
 
 fun MoeAnimeEpisode.download(config: Config) {
-    val file = File("${config.animepath}/${this.anime.name}/${this.episode}.mp4")
+    val file = File("${config.animepath}/${this.anime.name}/${this.episodeNumber}.mp4")
     val path = File("${config.animepath}/${this.anime.name}")
-    println("[${this.episode}/${this.anime.episodeCount}] Downloading ${this.anime.name} - Episode ${this.episode} to [${file.canonicalPath}]")
+    println("[${this.episodeNumber}/${this.anime.episodeCount}] Downloading ${this.anime.name} - Episode ${this.episodeNumber} to [${file.canonicalPath}]")
     path.mkdirs()
     if(!file.exists()) file.createNewFile()
     val url = URL(this.url)
     val len = this.getLength(url)
     if(file.length() == len){
-        println("[SKIPPED] Episode ${this.episode} of [${this.anime.name}]")
+        println("[SKIPPED] Episode ${this.episodeNumber} of [${this.anime.name}]")
         println("Already downloaded.")
         return
     }
     val request = this.getInputStreamRequest(url, file, len)
-    if(file.length() != 0L) println("[${this.anime.name}] Resuming download of [Episode ${this.episode}] ${file.length()}/$len")
+    if(file.length() != 0L) println("[${this.anime.name}] Resuming download of [Episode ${this.episodeNumber}] ${file.length()}/$len")
     if(request == null) this.download(config)
     else {
         request.inputStream.writeAllToFile(file)
@@ -138,7 +138,7 @@ fun InputStream.writeAllToFile(file : File) {
 fun MoeAnimeEpisode.getLength(url : URL) : Long {
     val conn = url.openConnection() as HttpURLConnection
     conn.requestMethod = "HEAD"
-    conn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
+    conn.setRequestProperty("referer", "${this.anime.link}/${this.episodeNumber}")
     val size = conn.contentLengthLong
     conn.disconnect()
     return size;
@@ -147,7 +147,7 @@ fun MoeAnimeEpisode.getLength(url : URL) : Long {
 fun MoeAnimeEpisode.getInputStreamRequest(url : URL, file: File, length : Long) : HttpURLConnection? {
     val conn = url.openConnection() as HttpURLConnection
     conn.requestMethod = "GET"
-    conn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
+    conn.setRequestProperty("referer", "${this.anime.link}/${this.episodeNumber}")
     conn.setRequestProperty("Connection", "keep-alive")
     conn.setRequestProperty("accept-encoding", "identity")
     conn.setRequestProperty("Range", "bytes=${file.length()}-$length")
