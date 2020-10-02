@@ -92,48 +92,27 @@ fun MoeAnimeResource.download(config: Config) {
     val path = File("${config.animepath}/${this.anime.name}")
     println("[${this.episode}/${this.anime.length}] Downloading ${this.anime.name} - Episode ${this.episode} to [${file.canonicalPath}]")
     path.mkdirs()
+    if(!file.exists()) file.createNewFile()
     val url = URL(this.url)
     val len = this.getLength(url)
-    val getFileConn = url.openConnection() as HttpURLConnection
-    getFileConn.requestMethod = "GET"
-    getFileConn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
-    getFileConn.setRequestProperty("Connection", "keep-alive")
-    getFileConn.setRequestProperty("accept-encoding", "identity")
-
-    if(!file.exists() || file.length() != len) {
-        if(!file.exists()) file.createNewFile()
-        getFileConn.setRequestProperty("Range", "bytes=${file.length()}-$len")
-        if(file.length() != 0L) println("[${this.anime.name}] Resuming download of [Episode ${this.episode}] ${file.length()}/$len")
-    }else if(file.length() == len){
+    if(file.length() == len){
         println("[SKIPPED] Episode ${this.episode} of [${this.anime.name}]")
         println("Already downloaded.")
         return
     }
-
-    val code = getFileConn.responseCode
-    if(code == 200 || code == 206){
-        println("Download started.")
-        val stream = getFileConn.inputStream
-        stream.writeAllToFile(file)
-        stream.closeQuietly()
-        println("Download Ended.")
-    } else {
-        println("=============================[ERROR]=============================")
-        println("An unexpected status code was returned. Please report this!!!")
-        println("Status Code : $code")
-        println("Raised from : ${getFileConn.url}")
-        println("Report HERE : https://github.com/RORIdev/moesharp/issues/3")
-        println("=============================[ERROR]=============================")
-        println("moetk will now reload. This could fix the issue.")
-        println("")
-        println("")
-        getFileConn.disconnect()
-        this.download(config)
+    val request = this.getInputStreamRequest(url, file, len)
+    if(file.length() != 0L) println("[${this.anime.name}] Resuming download of [Episode ${this.episode}] ${file.length()}/$len")
+    if(request == null) this.download(config)
+    else {
+        request.inputStream.writeAllToFile(file)
+        request.inputStream.closeQuietly()
+        request.disconnect()
     }
-    getFileConn.disconnect()
     if(file.length() != len){
-        println("[Remote Server] Connection closed before expected bit.")
+        println("[Remote Server] Connection closed unexpectedly. Reconnecting")
         this.download(config)
+    } else {
+        println("Download Completed.")
     }
 }
 
@@ -163,4 +142,27 @@ fun MoeAnimeResource.getLength(url : URL) : Long {
     val size = conn.contentLengthLong
     conn.disconnect()
     return size;
+}
+
+fun MoeAnimeResource.getInputStreamRequest(url : URL, file: File, length : Long) : HttpURLConnection? {
+    val conn = url.openConnection() as HttpURLConnection
+    conn.requestMethod = "GET"
+    conn.setRequestProperty("referer", "${this.anime.link}/${this.episode}")
+    conn.setRequestProperty("Connection", "keep-alive")
+    conn.setRequestProperty("accept-encoding", "identity")
+    conn.setRequestProperty("Range", "bytes=${file.length()}-$length")
+    val code = conn.responseCode
+    if(code != 206 && code != 200) {
+        println("=============================[ERROR]=============================")
+        println("An unexpected status code was returned. Please report this!!!")
+        println("Status Code : $code")
+        println("Raised from : ${conn.url}")
+        println("Report HERE : https://github.com/RORIdev/moesharp/issues/3")
+        println("=============================[ERROR]=============================")
+        println("moetk will now reload. This could fix the issue.")
+        println("")
+        println("")
+        return null
+    }
+    return conn
 }
