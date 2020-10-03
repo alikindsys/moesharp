@@ -62,8 +62,9 @@ internal fun WebDriver.getAnimeName(link: String) : String {
 }
 internal fun String.processLink() : String {
     val processedLink : MutableList<String> = mutableListOf()
-    for (s in this.split("/")) {
-        if(s.contains(Regex("\\d+"))) continue
+    val link = this.split("/")
+    for (s in link) {
+        if(link.indexOf(s) == link.size - 1 && s.contains(Regex("\\d+"))) continue
         processedLink.add(s)
     }
     return processedLink.joinToString(separator = "/")
